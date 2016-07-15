@@ -35,6 +35,7 @@
   var Validator = function (element, options) {
     this.$element = $(element)
     this.options  = options
+    this.validators = $.extend({}, Validator.VALIDATORS, options.custom)
 
     options.errors = $.extend({}, Validator.DEFAULTS.errors, options.errors)
 
@@ -42,7 +43,6 @@
       if (!options.errors[custom]) throw new Error('Missing default error message for custom validator: ' + custom)
     }
 
-    $.extend(Validator.VALIDATORS, options.custom)
 
     this.$element.attr('novalidate', true) // disable automatic native validation
     this.toggleSubmit()
@@ -159,7 +159,7 @@
         || options.errors[key]
     }
 
-    $.each(Validator.VALIDATORS, $.proxy(function (key, validator) {
+    $.each(this.validators $.proxy(function (key, validator) {
       if (($el.data(key) || key == 'native') && !validator.call(this, $el)) {
         var error = getErrorMessage(key)
         !~errors.indexOf(error) && errors.push(error)
