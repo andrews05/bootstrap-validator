@@ -33,16 +33,9 @@
   // ==========================
 
   var Validator = function (element, options) {
-    this.$element = $(element)
-    this.options  = options
+    this.options    = options
     this.validators = $.extend({}, Validator.VALIDATORS, options.custom)
-
-    options.errors = $.extend({}, Validator.DEFAULTS.errors, options.errors)
-
-    for (var custom in options.custom) {
-      if (!options.errors[custom]) throw new Error('Missing default error message for custom validator: ' + custom)
-    }
-
+    this.$element   = $(element)
 
     this.$element.attr('novalidate', true) // disable automatic native validation
     this.toggleSubmit()
@@ -83,15 +76,17 @@
   Validator.VALIDATORS = {
     'native': function ($el) {
       var el = $el[0]
-      return el.checkValidity ? el.checkValidity() : true
+      if (el.checkValidity) {
+        return !el.checkValidity() && !el.validity.valid && (el.validationMessage || "error!")
+      }
     },
     'match': function ($el) {
       var target = $el.data('match')
-      return !$el.val() || $el.val() === $(target).val()
+      return $el.val() !== $(target).val() && Validator.DEFAULTS.errors.match
     },
     'minlength': function ($el) {
       var minlength = $el.data('minlength')
-      return !$el.val() || $el.val().length >= minlength
+      return $el.val().length < minlength && Validator.DEFAULTS.errors.minlength
     }
   }
 
@@ -134,14 +129,16 @@
   Validator.prototype.runValidators = function ($el) {
     var errors   = []
     var deferred = $.Deferred()
-    var options  = this.options
 
     $el.data('bs.validator.deferred') && $el.data('bs.validator.deferred').reject()
     $el.data('bs.validator.deferred', deferred)
 
+    function getValidatorSpecificError(key) {
+      return $el.data(key + '-error')
+    }
+
     function getValidityStateError() {
       var validity = $el[0].validity
-
       return validity.typeMismatch    ? $el.data('type-error')
            : validity.patternMismatch ? $el.data('pattern-error')
            : validity.stepMismatch    ? $el.data('step-error')
@@ -151,17 +148,21 @@
            :                            null
     }
 
-    function getErrorMessage(key) {
-      return $el.data(key + '-error')
-        || getValidityStateError()
-        || $el.data('error')
-        || key == 'native' && $el[0].validationMessage
-        || options.errors[key]
+    function getGenericError() {
+      return $el.data('error')
     }
 
-    $.each(this.validators $.proxy(function (key, validator) {
-      if (($el.data(key) || key == 'native') && !validator.call(this, $el)) {
-        var error = getErrorMessage(key)
+    function getErrorMessage(key) {
+      return getValidatorSpecificError(key)
+          || getValidityStateError()
+          || getGenericError()
+    }
+
+    $.each(this.validators, $.proxy(function (key, validator) {
+      var error = null
+      if (($el.data(key) || key == 'native') &&
+          (error = validator.call(this, $el))) {
+         error = getErrorMessage(key) || error
         !~errors.indexOf(error) && errors.push(error)
       }
     }, this))
