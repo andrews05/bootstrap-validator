@@ -40,7 +40,7 @@
     this.$element.attr('novalidate', true) // disable automatic native validation
     this.toggleSubmit()
 
-    this.$element.on('input.bs.validator change.bs.validator focusout.bs.validator', $.proxy(this.validateInput, this))
+    this.$element.on('input.bs.validator change.bs.validator focusout.bs.validator', $.proxy(this.onInput, this))
     this.$element.on('submit.bs.validator', $.proxy(this.onSubmit, this))
 
     this.$element.find('[data-match]').each(function () {
@@ -90,25 +90,34 @@
     }
   }
 
-  Validator.prototype.validateInput = function (e) {
-    var $el        = $(e.target)
-    var eventType  = e.type
+  Validator.prototype.onInput = function (e) {
+    var self        = this
+    var $el         = $(e.target)
+    var deferErrors = e.type !== 'focusout'
+
+    if (!$el.is(Validator.INPUT_SELECTOR)) return
+
+    this.validateInput($el, deferErrors).done(function () {
+      self.toggleSubmit()
+    })
+  }
+
+  Validator.prototype.validateInput = function ($el, deferErrors) {
     var prevErrors = $el.data('bs.validator.errors')
-    var errors
 
     if ($el.is('[type="radio"]')) $el = this.$element.find('input[name="' + $el.attr('name') + '"]')
 
-    this.$element.trigger(e = $.Event('validate.bs.validator', {relatedTarget: $el[0]}))
-
+    var e = $.Event('validate.bs.validator', {relatedTarget: $el[0]})
+    this.$element.trigger(e)
     if (e.isDefaultPrevented()) return
 
     var self = this
 
-    this.runValidators($el).done(function (errors) {
+    return this.runValidators($el).done(function (errors) {
       $el.data('bs.validator.errors', errors)
 
       errors.length
-        ? eventType == 'focusout' ? self.showErrors($el) : self.defer($el, self.showErrors)
+        ? deferErrors ? self.defer($el, self.showErrors) : self.showErrors($el)
         : self.clearErrors($el)
 
       if (!prevErrors || errors.toString() !== prevErrors.toString()) {
@@ -118,8 +127,6 @@
 
         self.$element.trigger(e)
       }
-
-      self.toggleSubmit()
 
       self.$element.trigger($.Event('validated.bs.validator', {relatedTarget: $el[0]}))
     })
@@ -181,13 +188,14 @@
   }
 
   Validator.prototype.validate = function () {
-    var delay = this.options.delay
+    var self = this
 
-    this.options.delay = 0
-    this.$element.find(Validator.INPUT_SELECTOR).trigger('input.bs.validator')
-    this.options.delay = delay
-
-    this.focusError()
+    $.when(this.$element.find(Validator.INPUT_SELECTOR).map(function (el) {
+      return self.validateInput($(this), false)
+    })).then(function () {
+      self.toggleSubmit()
+      self.focusError()
+    })
 
     return this
   }
