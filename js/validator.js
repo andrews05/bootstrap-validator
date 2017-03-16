@@ -62,10 +62,13 @@
 
   Validator.INPUT_SELECTOR = ':input:not([type="submit"], button):enabled:visible'
 
+  Validator.FOCUS_OFFSET = 20
+
   Validator.DEFAULTS = {
     delay: 500,
     html: false,
     disable: true,
+    focus: true,
     custom: {},
     errors: {
       match: 'Does not match',
@@ -170,7 +173,19 @@
     this.$element.find(Validator.INPUT_SELECTOR).trigger('input.bs.validator')
     this.options.delay = delay
 
+    self.focusError()
+
     return this
+  }
+
+  Validator.prototype.focusError = function () {
+    if (!this.options.focus) return
+
+    var $input = this.$element.find(".has-error:first :input")
+    if ($input.length === 0) return
+
+    $('html, body').animate({scrollTop: $input.offset().top - Validator.FOCUS_OFFSET}, 250)
+    $input.focus()
   }
 
   Validator.prototype.showErrors = function ($el) {
