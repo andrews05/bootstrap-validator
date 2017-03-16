@@ -551,4 +551,52 @@ $(function () {
     assert.ok($('#bar').data('bs.validator.errors').length === 1, 'bar input is invalid')
     assert.ok($('#bar').data('bs.validator.errors')[0] === options.errors.foo, 'bar error is custom error')
   })
+<<<<<<< HEAD
+=======
+
+  QUnit.test('should update set of fields', function (assert) {
+    var form  = '<form></form>'
+    var group = '<div class="form-group">'
+      +   '<input type="text" data-error="error" required>'
+      +   '<div id="errors" class="help-block with-errors"></div>'
+      + '</div>'
+
+    form = $(form)
+      .appendTo('#qunit-fixture')
+      .validator()
+      .append(group)
+      .validator('validate')
+
+    var $errors = $('#errors')
+
+    assert.equal($errors.text(), '', 'field was not validated since it was added after the validator was initialized')
+
+    $(form)
+      .validator('update')
+      .validator('validate')
+
+    assert.equal($errors.text(), 'error', 'field was validated after a call to .validator(\'update\')')
+  })
+
+  QUnit.test('should respect data-validate attr to force validation on an input', function (assert) {
+    var form = '<form>'
+      + '<div class="form-group">'
+      +   '<input type="text" data-error="error" data-validate="true" style="display:none" required>'
+      +   '<div id="validated" class="help-block with-errors"></div>'
+      + '</div>'
+      + '<div class="form-group">'
+      +   '<input type="text" data-error="error" data-validate="false" required>'
+      +   '<div id="skipped" class="help-block with-errors"></div>'
+      + '</div>'
+      + '<button type="submit">Submit</button>'
+      + '</form>'
+
+    form = $(form)
+      .appendTo('#qunit-fixture')
+      .validator('validate')
+
+    assert.equal($('#validated').text(), 'error', 'validation of hidden field was forced due to data-validate="true"')
+    assert.equal($('#skipped').text(), '', 'validation of field was bypassed due to data-validate="false"')
+  })
+>>>>>>> 1f7f6e4... Adding support of `data-validate="true|false"` on inputs to force validation of that field.
 })
