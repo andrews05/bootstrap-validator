@@ -187,7 +187,7 @@
     this.$element.find(Validator.INPUT_SELECTOR).trigger('input.bs.validator')
     this.options.delay = delay
 
-    self.focusError()
+    this.focusError()
 
     return this
   }
