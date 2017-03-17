@@ -187,13 +187,14 @@
     return deferred.promise()
   }
 
-  Validator.prototype.validate = function () {
+  Validator.prototype.validate = function ($inputs) {
     var self = this
+    if (!$inputs) $inputs = this.$element.find(Validator.INPUT_SELECTOR);
 
-    $.when(this.$element.find(Validator.INPUT_SELECTOR).map(function (el) {
+    $.when($inputs.map(function (el) {
       return self.validateInput($(this), false)
     })).then(function () {
-      self.toggleSubmit()
+      self.toggleSubmit($inputs)
       self.focusError()
     })
 
@@ -248,37 +249,39 @@
       && $group.addClass('has-success')
   }
 
-  Validator.prototype.hasErrors = function () {
+  Validator.prototype.hasErrors = function ($inputs) {
     function fieldErrors() {
       return !!($(this).data('bs.validator.errors') || []).length
     }
 
-    return !!this.$element.find(Validator.INPUT_SELECTOR).filter(fieldErrors).length
+    return !!$inputs.filter(fieldErrors).length
   }
 
-  Validator.prototype.isIncomplete = function () {
+  Validator.prototype.isIncomplete = function ($inputs) {
     function fieldIncomplete() {
       return this.type === 'checkbox' ? !this.checked                                   :
              this.type === 'radio'    ? !$('[name="' + this.name + '"]:checked').length :
                                         $.trim(this.value) === ''
     }
 
-    return !!this.$element.find(Validator.INPUT_SELECTOR).filter('[required]').filter(fieldIncomplete).length
+    return !!$inputs.filter('[required]').filter(fieldIncomplete).length
   }
 
   Validator.prototype.onSubmit = function (e) {
-    this.validate()
-    if (this.isIncomplete() || this.hasErrors()) e.preventDefault()
+	var $inputs = this.$element.find(Validator.INPUT_SELECTOR);
+    this.validate($inputs)
+    if (this.isIncomplete($inputs) || this.hasErrors($inputs)) e.preventDefault()
   }
 
-  Validator.prototype.toggleSubmit = function () {
+  Validator.prototype.toggleSubmit = function ($inputs) {
     if(!this.options.disable) return
+    if (!$inputs) $inputs = this.$element.find(Validator.INPUT_SELECTOR)
 
     var $btn = $('button[type="submit"], input[type="submit"]')
       .filter('[form="' + this.$element.attr('id') + '"]')
       .add(this.$element.find('input[type="submit"], button[type="submit"]'))
 
-    $btn.toggleClass('disabled', this.isIncomplete() || this.hasErrors())
+    $btn.toggleClass('disabled', this.isIncomplete($inputs) || this.hasErrors($inputs))
   }
 
   Validator.prototype.defer = function ($el, callback) {
