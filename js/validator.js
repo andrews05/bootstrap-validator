@@ -259,9 +259,10 @@
 
   Validator.prototype.isIncomplete = function ($inputs) {
     function fieldIncomplete() {
-      return this.type === 'checkbox' ? !this.checked                                   :
-             this.type === 'radio'    ? !$('[name="' + this.name + '"]:checked').length :
-                                        $.trim(this.value) === ''
+      return this.type === 'checkbox'        ? !this.checked :
+             this.type === 'radio'           ? !$(this.form.elements).filter('[name="' + this.name + '"]:checked').length :
+             this.type === 'select-multiple' ? !($(this).val() || []).length :
+                                               $.trim(this.value) === ''
     }
 
     return !!$inputs.filter('[required]').filter(fieldIncomplete).length
