@@ -43,7 +43,7 @@
     this.$element.on('input.bs.validator change.bs.validator focusout.bs.validator', $.proxy(this.onInput, this))
     this.$element.on('submit.bs.validator', $.proxy(this.onSubmit, this))
 
-    this.$element.find('[data-match]').each(function () {
+    $(element.elements).filter('[data-match]').each(function () {
       var $this  = $(this)
       var target = $this.data('match')
 
@@ -53,7 +53,7 @@
     })
   }
 
-  Validator.INPUT_SELECTOR = ':input:not([type="submit"], button, [data-validate="false"]):enabled:visible,:input[data-validate="true"]'
+  Validator.INPUT_SELECTOR = ':not([type="submit"], button, [data-validate="false"]):enabled:visible,[data-validate="true"]'
 
   Validator.FOCUS_OFFSET = 20
 
@@ -105,7 +105,7 @@
   Validator.prototype.validateInput = function ($el, deferErrors) {
     var prevErrors = $el.data('bs.validator.errors')
 
-    if ($el.is('[type="radio"]')) $el = this.$element.find('input[name="' + $el.attr('name') + '"]')
+    if ($el.is('[type="radio"]')) $el = $($el[0].form.elements).filter('input[name="' + $el.attr('name') + '"]')
 
     var e = $.Event('validate.bs.validator', {relatedTarget: $el[0]})
     this.$element.trigger(e)
@@ -189,7 +189,7 @@
 
   Validator.prototype.validate = function ($inputs) {
     var self = this
-    if (!$inputs) $inputs = this.$element.find(Validator.INPUT_SELECTOR);
+    if (!$inputs) $inputs = $(this.$element[0].elements).filter(Validator.INPUT_SELECTOR);
 
     $.when($inputs.map(function (el) {
       return self.validateInput($(this), false)
@@ -269,14 +269,14 @@
   }
 
   Validator.prototype.onSubmit = function (e) {
-	var $inputs = this.$element.find(Validator.INPUT_SELECTOR);
+    var $inputs = $(this.$element[0].elements).filter(Validator.INPUT_SELECTOR);
     this.validate($inputs)
     if (this.isIncomplete($inputs) || this.hasErrors($inputs)) e.preventDefault()
   }
 
   Validator.prototype.toggleSubmit = function ($inputs) {
     if(!this.options.disable) return
-    if (!$inputs) $inputs = this.$element.find(Validator.INPUT_SELECTOR)
+    if (!$inputs) $inputs = $(this.$element[0].elements).filter(Validator.INPUT_SELECTOR)
 
     var $btn = $('button[type="submit"], input[type="submit"]')
       .filter('[form="' + this.$element.attr('id') + '"]')
@@ -300,7 +300,7 @@
       .find('.form-control-feedback')
         .removeClass([this.options.feedback.error, this.options.feedback.success].join(' '))
 
-    this.$element.find(Validator.INPUT_SELECTOR)
+    $(this.$element[0].elements).filter(Validator.INPUT_SELECTOR)
       .off('.bs.validator')
       .removeData(['bs.validator.errors', 'bs.validator.deferred'])
       .each(function () {
